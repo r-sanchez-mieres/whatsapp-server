@@ -1,6 +1,6 @@
 const express = require('express');
 const http = require('http');
-const { initWhatsapp, getClient } = require('./services/whatsapp');
+const { initWhatsapp, getClient, isReady } = require('./services/whatsapp');
 const { MessageMedia } = require('whatsapp-web.js');
 const { Server } = require('socket.io')
 //const { Buttons } = require('whatsapp-web.js')
@@ -21,12 +21,17 @@ const io = new Server(server, {
 // WebSocket: escuchar nuevas conexiones
 io.on('connection', (socket) => {
   console.log('🟦 Cliente frontend conectado vía WebSocket');
+  socket.emit('ready', isReady() && getClient().info != null)
 });
 
 
 app.get('/contacts', async (req, res) => {
+
+  if(!isReady()) return res.status(500).json({'message' : 'Cliente aun no esta listo'})
+
   const client = getClient()
   const contacts = await client.getContacts();
+
 
   let response = []
   contacts.forEach( contact => {
